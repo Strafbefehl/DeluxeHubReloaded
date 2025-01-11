@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.bukkit.Material;
 
 public class HotbarManager extends Module {
 
@@ -42,6 +43,20 @@ public class HotbarManager extends Module {
 		if (config.getBoolean("hotbar.joinslot")) {
 			_joinSlot = config.getInt("hotbar.slot_number");
 		}
+                
+                // Create a dummy item and register the HotbarItem
+                ItemStack dummyItem = new ItemStack(Material.STICK);
+                /*ItemMeta meta = dummyItem.getItemMeta();
+                
+                if (meta != null) {
+                    meta.setDisplayName("Dummy Item");
+                    dummyItem.setItemMeta(meta);
+                }*/
+                
+                CustomItem customItemDef = new CustomItem(this, dummyItem, 0, "Hotbar Item Locker");
+                
+                Bukkit.getPluginManager().registerEvents(customItemDef, getPlugin());
+                //registerHotbarItem(customItemDef);
 
 		if (config.getBoolean("custom_join_items.enabled")) {
 

@@ -81,6 +81,7 @@ public class PvPMode extends Module {
 			_switcher.put(state,
 					ItemStackBuilder.getItemStack(switcherSection)
 							.addPartialData(section)
+							.addNamespacedKey(new org.bukkit.NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING, "Hotbar Item Locker")
 							.addNamespacedKey(NamespacedKeys.Keys.PVP_MODE_SWITCHER.get(), PersistentDataType.BOOLEAN, true)
 							.addNamespacedKey(NamespacedKeys.Keys.PVP_MODE_SWITCHER_STATE.get(), PersistentDataType.BOOLEAN, state != PvPSwitcherState.PVP_OFF).build());
         }
@@ -99,6 +100,7 @@ public class PvPMode extends Module {
 								otherItemSection.set(entry.getKey(), entry.getValue());
 							}
 							ItemStack item = ItemStackBuilder.getItemStack(otherItemSection)
+                                                                        .addNamespacedKey(new org.bukkit.NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING, "Hotbar Item Locker")
 									.addNamespacedKey(NamespacedKeys.Keys.PVP_MODE_ITEM.get(), PersistentDataType.BOOLEAN, true).build();
 							_items.get(type).add(item);
 						}
@@ -108,6 +110,7 @@ public class PvPMode extends Module {
 			}
 			List<ItemStack> itemList = new ArrayList<>();
 			itemList.add(ItemStackBuilder.getItemStack(section)
+                                .addNamespacedKey(new org.bukkit.NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING, "Hotbar Item Locker")
 				.addNamespacedKey(NamespacedKeys.Keys.PVP_MODE_ITEM.get(), PersistentDataType.BOOLEAN, true).build());
 			_items.put(type, itemList);
 		}

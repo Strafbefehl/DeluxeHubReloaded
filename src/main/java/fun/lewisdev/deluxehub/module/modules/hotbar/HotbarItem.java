@@ -146,7 +146,8 @@ public abstract class HotbarItem implements Listener {
 			String hotbarItem = meta.getPersistentDataContainer().get(new NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING);
 			if (hotbarItem != null && getHotbarManager().inDisabledWorld(player.getLocation()) && hotbarItem.equals(key)) return;
 			else if (hotbarItem != null && hotbarItem.equals(key)) {
-				onInteract(player);
+				onInteract(player); // Do the action related to that item like opening a server menu
+                                event.setCancelled(true); // Let the menu/action to be completed but cancel any item movements
 			}
 		}
 	}

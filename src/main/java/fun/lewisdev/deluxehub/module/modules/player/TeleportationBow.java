@@ -80,6 +80,7 @@ public class TeleportationBow extends Module {
                         null)
 				.setUnbreakable(true)
 				.withEnchantment(Enchantment.INFINITY)
+                .addNamespacedKey(new org.bukkit.NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING, "Hotbar Item Locker")
                 .addNamespacedKey(NamespacedKeys.Keys.TELEPORTATION_BOW_ITEM.get(), PersistentDataType.BOOLEAN, true)
                 .build();
 		if(arrowSection == null){
@@ -89,6 +90,7 @@ public class TeleportationBow extends Module {
 				getItemStack(arrowItem,
 						arrowSection,
 						null)
+				.addNamespacedKey(new org.bukkit.NamespacedKey(getPlugin(), "hotbarItem"), PersistentDataType.STRING, "Hotbar Item Locker")
 				.addNamespacedKey(NamespacedKeys.Keys.TELEPORTATION_BOW_ITEM.get(), PersistentDataType.BOOLEAN, true)
 				.build();
         if(config.getBoolean("disable_inventory_movement")){

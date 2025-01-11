@@ -118,6 +118,10 @@
             <id>opencollab-snapshot</id>
             <url>https://repo.opencollab.dev/main/</url>
         </repository>
+        <repository>
+            <id>aikar</id>
+            <url>https://repo.aikar.co/content/groups/aikar/</url>
+        </repository>
     </repositories>
 
     <dependencies>
