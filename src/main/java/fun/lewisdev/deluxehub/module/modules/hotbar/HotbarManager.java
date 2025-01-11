@@ -44,19 +44,10 @@ public class HotbarManager extends Module {
 			_joinSlot = config.getInt("hotbar.slot_number");
 		}
                 
-                // Create a dummy item and register the HotbarItem
-                ItemStack dummyItem = new ItemStack(Material.STICK);
-                /*ItemMeta meta = dummyItem.getItemMeta();
-                
-                if (meta != null) {
-                    meta.setDisplayName("Dummy Item");
-                    dummyItem.setItemMeta(meta);
-                }*/
-                
+                // Create a dummy item and register it. Used to protect any hotbar items to be moved inside containers like decorated pots.
+                ItemStack dummyItem = new ItemStack(Material.STICK);                
                 CustomItem customItemDef = new CustomItem(this, dummyItem, 0, "Hotbar Item Locker");
-                
                 Bukkit.getPluginManager().registerEvents(customItemDef, getPlugin());
-                //registerHotbarItem(customItemDef);
 
 		if (config.getBoolean("custom_join_items.enabled")) {
 
