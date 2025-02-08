@@ -162,6 +162,7 @@ public class PvPMode extends Module {
 							inv.setItem(_slot, _switcher.get(PvPSwitcherState.PVP_ON));
 							for (PvPItemType itemType : PvPItemType.values()) {
 								List<ItemStack> is = _items.get(itemType);
+								if (is == null) continue;
 								switch (itemType) {
 									case SWORD:
 										short slot = (short) itemType.getSlot();
@@ -183,15 +184,16 @@ public class PvPMode extends Module {
 									case BOOTS:
 										inv.setBoots(is.get(0));
 										break;
-									default:{
-										for(ItemStack item : is)
+									default:
+										for(ItemStack item : is){
 											for(int i = 0; i < 9; i++){
 												if(inv.getItem(i) == null){
 													inv.setItem(i, item);
 													break;
 												}
 											}
-									}
+										}
+										break;
 								}
 							}
 							inv.clear(_slot);
