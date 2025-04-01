@@ -43,7 +43,7 @@ public class FlyCommand {
 				Messages.FLIGHT_DISABLE.send(player);
 				toggleFlight(player, false);
 				allowPlayerFly.put(player.getUniqueId(), false);
-				player.setAllowFlight(true);
+				// Removed player.setAllowFlight(true) to prevent re-enabling flight
 			} else {
 				Messages.FLIGHT_ENABLE.send(player);
 				toggleFlight(player, true);
