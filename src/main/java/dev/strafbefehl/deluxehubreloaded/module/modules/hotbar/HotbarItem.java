@@ -131,8 +131,9 @@ public abstract class HotbarItem implements Listener {
 		}
 	}
 
-	@EventHandler
+	@EventHandler (priority = EventPriority.MONITOR)
 	public void hotbarItemInteract(PlayerInteractEvent event) {
+		if (event.isCancelled()) return;
 		if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 		if (event.getHand() != EquipmentSlot.HAND) return;
 
