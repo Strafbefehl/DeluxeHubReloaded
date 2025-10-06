@@ -101,6 +101,7 @@ public class WorldProtect extends Module {
     private boolean playerPvP;
     private boolean playerDrowning;
     private boolean fireDamage;
+    private boolean armorStandManipulate;
 
     public WorldProtect(DeluxeHubPlugin plugin) {
         super(plugin, ModuleType.WORLD_PROTECT);
@@ -126,6 +127,7 @@ public class WorldProtect extends Module {
         leafDecay = config.getBoolean("world_settings.disable_block_leaf_decay");
         playerDrowning = config.getBoolean("world_settings.disable_drowning");
         fireDamage = config.getBoolean("world_settings.disable_fire_damage");
+        armorStandManipulate = config.getBoolean("world_settings.disable_armor_stand_manipulate");
     }
 
     @Override
@@ -157,6 +159,23 @@ public class WorldProtect extends Module {
                     return;
                 }
             }
+        }
+
+        
+        Player player = event.getPlayer();
+        if (inDisabledWorld(player.getLocation()))
+            return;
+
+        if (!armorStandManipulate)
+            return;
+
+        if (BuildMode.getInstance().isPresent(player.getUniqueId()))
+            return;
+
+        event.setCancelled(true);
+
+        if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_INTERACT, 3)) {
+            Messages.EVENT_ARMOR_STAND_MANIPULATE.send(player);
         }
     }
 

@@ -275,6 +275,8 @@ world_settings:
   disable_block_burn: true
   disable_block_fire_spread: true
   disable_block_leaf_decay: true
+  # Entities
+  disable_armor_stand_manipulate: true # Prevent players from taking/placing items on armor stands
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # | PLAYER JOIN EVENT                        |

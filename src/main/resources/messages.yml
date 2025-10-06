@@ -58,6 +58,7 @@ Messages:
     BLOCK_PLACE: "%prefix% &cYou are not allowed to place blocks."
     BLOCK_BREAK: "%prefix% &cYou are not allowed to break blocks."
     BLOCK_INTERACT: "%prefix% &cYou are not allowed to use this."
+    ARMOR_STAND_MANIPULATE: "%prefix% &cYou are not allowed to interact with armor stands."
     PLAYER_PVP: "%prefix% &cYou are not allowed to pvp here."
 
   HOLOGRAMS:
