@@ -18,7 +18,9 @@ public class GamemodeAction implements Action {
 		try {
 			player.setGameMode(GameMode.valueOf(data.toUpperCase()));
 			if (player.getGameMode() == GameMode.ADVENTURE || player.getGameMode() == GameMode.SURVIVAL) {
-				player.getPlayer().setAllowFlight(true);
+				if (player.hasPermission("deluxehub.command.fly")) {
+					player.getPlayer().setAllowFlight(true);
+				}
 			}
 		} catch (IllegalArgumentException ex) {
 			Bukkit.getLogger().warning("[DeluxeHubReloaded Action] Invalid gamemode name: " + data.toUpperCase());
