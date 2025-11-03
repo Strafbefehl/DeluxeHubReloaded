@@ -10,6 +10,7 @@ import dev.strafbefehl.deluxehubreloaded.utility.ItemStackBuilder;
 import dev.strafbefehl.deluxehubreloaded.utility.NamespacedKeys;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -135,7 +136,7 @@ public class PvPMode extends Module {
 			int taskId = _tasks.get(player.getUniqueId());
             scheduler.cancelTask(taskId);
             _tasks.remove(pUUID);
-			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().append(" ").create());
+			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent());
             return;
         }
 		PlayerInventory inv = player.getInventory();
@@ -227,7 +228,7 @@ public class PvPMode extends Module {
 							hotbarManager.changeToJoinSlot(player);
 							getPlugin().getServer().getScheduler().cancelTask(_tasks.get(pUUID));
 							_tasks.remove(pUUID);
-							player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().append(" ").create());
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent());
 						}
 					}
 				}
