@@ -1,25 +1,25 @@
-name: Build and Release All Branches
+name: Build All Branches and Generate Artifacts
 
 on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'The version number for the release (e.g., 1.0.0)'
+        description: 'The version number for artifact naming (e.g., 1.0.0)'
         required: true
 
 jobs:
-  build-and-release:
+  build-artifacts:
     runs-on: ubuntu-latest
 
     steps:
     - name: Set up JDK 21
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'  # Use the Eclipse Temurin distribution
         java-version: '21'
 
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for all branches
 
@@ -31,39 +31,20 @@ jobs:
 
     - name: Compile and Package Each Branch
       run: |
+        mkdir -p artifacts
         while IFS= read -r branch
         do
           echo "Processing branch: $branch"
           git checkout $branch
           mvn clean package -DskipTests
+          mkdir -p artifacts/$branch
+          cp target/*.jar artifacts/$branch/ 2>/dev/null || echo "No JAR found for branch $branch"
         done < branches.txt
       shell: bash
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
       with:
-        tag_name: "v${{ github.event.inputs.release_version }}"
-        release_name: "DeluxeHub - v${{ github.event.inputs.release_version }}"
-        body: |
-          Feel free to join our discord if you need help! :)
-          https://discord.gg/uQkg8ZeHzK
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Release Assets
-      run: |
-        while IFS= read -r branch
-        do
-          for file in target/*.jar; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file from branch $branch"
-              gh release upload "v${{ github.event.inputs.release_version }}" "$file" --clobber
-            fi
-          done
-        done < branches.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      shell: bash
+        name: DeluxeHub-Builds-v${{ github.event.inputs.release_version }}
+        path: artifacts/
+        retention-days: 14  # Keep artifacts for 14 days
