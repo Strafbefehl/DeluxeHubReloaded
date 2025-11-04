@@ -101,6 +101,7 @@ public class WorldProtect extends Module {
     private boolean playerPvP;
     private boolean playerDrowning;
     private boolean fireDamage;
+	private Set<String> breakWhitelist;
 
     public WorldProtect(DeluxeHubPlugin plugin) {
         super(plugin, ModuleType.WORLD_PROTECT);
@@ -126,6 +127,7 @@ public class WorldProtect extends Module {
         leafDecay = config.getBoolean("world_settings.disable_block_leaf_decay");
         playerDrowning = config.getBoolean("world_settings.disable_drowning");
         fireDamage = config.getBoolean("world_settings.disable_fire_damage");
+		breakWhitelist = new HashSet<>(config.getStringList("world_settings.break_whitelist"));
     }
 
     @Override
@@ -166,6 +168,7 @@ public class WorldProtect extends Module {
 
         Player player = event.getPlayer();
         if (inDisabledWorld(player.getLocation())) return;
+		if (breakWhitelist.contains(event.getBlock().getType().toString())) return;
         if (config.getBoolean("legacySystems.permissionsEnabled")) {
             if (player.hasPermission(Permissions.EVENT_BLOCK_BREAK.getPermission())) return;
         }

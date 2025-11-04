@@ -1,5 +1,6 @@
 package dev.strafbefehl.deluxehubreloaded.utility;
 
+import dev.lone.itemsadder.api.CustomStack;
 import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
 import dev.strafbefehl.deluxehubreloaded.hook.hooks.head.HeadHook;
 import org.bukkit.*;
@@ -103,18 +104,22 @@ public class ItemStackBuilder {
 	}
 
 	public static ItemStackBuilder getItemStack(ConfigurationSection section, Player player) {
-		Material material;
+		ItemStack item;
 		try {
-			material = Material.valueOf(section.getString("material").toUpperCase());
-		} catch (IllegalArgumentException e) {
-			// Fallback to a default material if the configured one is invalid
-			material = Material.STONE;
-			// You might want to log this error
+			String mat = section.getString("material");
+			if (mat.startsWith("itemsadder_")) {
+				CustomStack instance = CustomStack.getInstance(mat.substring(11));
+				if (instance == null) throw new IllegalArgumentException("Could not find "+mat);
+				item = instance.getItemStack();
+			} else {
+				item = new ItemStack(Material.valueOf(mat.toUpperCase()));
+			}
+		} catch (final Throwable e) {
+			e.printStackTrace();
+			item = new ItemStack(Material.BARRIER);
 		}
 
-		ItemStack item = new ItemStack(material);
-
-		if (material == Material.PLAYER_HEAD) {
+		if (item.getType() == Material.PLAYER_HEAD) {
 			if (section.contains("base64")) {
 				item = ((HeadHook) PLUGIN.getHookManager().getPluginHook("BASE64")).getHead(section.getString("base64")).clone();
 			} else if (section.contains("hdb") && PLUGIN.getHookManager().isHookEnabled("HEAD_DATABASE")) {
