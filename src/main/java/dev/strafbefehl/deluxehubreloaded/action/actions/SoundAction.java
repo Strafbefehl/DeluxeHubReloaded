@@ -18,7 +18,7 @@ public class SoundAction implements Action {
 	public void execute(DeluxeHubPlugin plugin, Player player, String data) {
 		try {
 			if (DeluxeHubPlugin.IsCompatible()) return;
-			player.playSound(player.getLocation(), Registry.SOUNDS.getOrThrow(NamespacedKey.minecraft(data.toLowerCase().replaceFirst("^_", ".").replaceFirst("_$", ".").replaceAll("_(?=.*_)", "."))), 1L, 1L);
+			player.playSound(player.getLocation(), Registry.SOUNDS.getOrThrow(NamespacedKey.minecraft(data.toLowerCase().replaceAll("[_.]+", ".").replaceAll("^\\.+|\\.+$", ""))), 1L, 1L);
 		} catch (Exception ex) {
 			Bukkit.getLogger().warning("[DeluxeHub Action] Invalid sound name: " + data.toUpperCase());
 		}
