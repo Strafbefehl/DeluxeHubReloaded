@@ -20,7 +20,7 @@ public class CommandManager {
 	private final DeluxeHubPlugin plugin;
 	private final FileConfiguration config;
 	private final List<CustomCommand> customCommands;
-	private CommandsManager commands;
+	private CommandsManager<CommandSender> commands;
 	private CommandsManagerRegistration commandRegistry;
 
 	public CommandManager(DeluxeHubPlugin plugin) {

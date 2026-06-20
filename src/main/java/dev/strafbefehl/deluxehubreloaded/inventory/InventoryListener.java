@@ -25,7 +25,7 @@ public class InventoryListener implements Listener {
 				if (itemStack == null || itemStack.getType() == Material.AIR) return;
 
 				InventoryBuilder customHolder = (InventoryBuilder) event.getView().getTopInventory().getHolder();
-				InventoryItem item = customHolder.getIcon(event.getRawSlot());
+				InventoryItem item = customHolder.getIcon(event.getRawSlot(), player);
 
 				if (item == null) return;
 

@@ -53,8 +53,7 @@ public class ConfigHandler {
 		try {
 			getConfig().save(file);
 		} catch (IOException e) {
-			e.printStackTrace();
-			plugin.getLogger().severe("Failed to save configuration file: " + name);
+			plugin.getLogger().severe("Failed to save configuration file: " + name + " — " + e.getMessage());
 		}
 	}
 

@@ -2,9 +2,12 @@ package dev.strafbefehl.deluxehubreloaded.module.modules.hologram;
 
 import dev.strafbefehl.deluxehubreloaded.utility.TextUtil;
 import dev.strafbefehl.deluxehubreloaded.utility.reflection.ArmorStandName;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,8 +19,10 @@ public class Hologram {
 	private final List<ArmorStand> stands;
 	private Location location;
 	private final String name;
+	private final NamespacedKey hologramKey;
 
-	public Hologram(String name, Location location) {
+	public Hologram(NamespacedKey hologramKey, String name, Location location) {
+		this.hologramKey = hologramKey;
 		this.name = name;
 		this.location = location;
 		stands = new ArrayList<>();
@@ -39,15 +44,16 @@ public class Hologram {
 		stand.setVisible(false);
 		stand.setGravity(false);
 		stand.setCustomNameVisible(true);
-		stand.setCustomName(TextUtil.color(text).trim());
+		stand.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(text).trim()));
 		stand.setCanPickupItems(false);
+		stand.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING, name);
 		stands.add(stand);
 		return this;
 	}
 
 	public Hologram setLine(int line, String text) {
 		ArmorStand stand = stands.get(line - 1);
-		stand.setCustomName(TextUtil.color(text).trim());
+		stand.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(text).trim()));
 		return this;
 	}
 

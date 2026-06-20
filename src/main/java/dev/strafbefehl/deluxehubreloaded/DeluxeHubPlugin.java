@@ -16,9 +16,10 @@ import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
 import dev.strafbefehl.deluxehubreloaded.module.modules.hologram.HologramManager;
 import dev.strafbefehl.deluxehubreloaded.utility.NamespacedKeys;
 import dev.strafbefehl.deluxehubreloaded.utility.UpdateChecker;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bstats.bukkit.MetricsLite;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,33 +43,35 @@ public class DeluxeHubPlugin extends JavaPlugin {
 	public void onEnable() {
 		long start = System.currentTimeMillis();
 		getLogger().log(Level.INFO, "Based on original code from DeluxeHub");
-		getLogger().log(Level.INFO, "Modified, and maintained by Strafbefehl, 2025");
+		getLogger().log(Level.INFO, "Modified, and maintained by Athar42 & Strafbefehl, 2025-2026");
 
-		// Check server version
-		if (Bukkit.getVersion().contains("1.13") || Bukkit.getVersion().contains("1.14") ||
-				Bukkit.getVersion().contains("1.15") || Bukkit.getVersion().contains("1.16") ||
-				Bukkit.getVersion().contains("1.17") || Bukkit.getVersion().contains("1.18") ||
-				Bukkit.getVersion().contains("1.19") || Bukkit.getVersion().contains("1.20")) {
-			getLogger().severe("============= UNSUPPORTED SERVER VERSION =============");
-			getLogger().severe("DeluxeHubReloaded requires at least Spigot 1.21 to run.");
-			getLogger().severe("Please update your server to a newer version.");
+		// Check if running on Paper
+		try {
+			Class.forName("io.papermc.paper.configuration.Configuration");
+		} catch (ClassNotFoundException ex) {
+			getLogger().severe("============= PAPER NOT DETECTED =============");
+			getLogger().severe("DeluxeHubReloaded requires Paper to run.");
+			getLogger().severe("Download Paper here: https://papermc.io/downloads/paper");
 			getLogger().severe("The plugin will now disable.");
-			getLogger().severe("============= UNSUPPORTED SERVER VERSION =============");
-			getPluginLoader().disablePlugin(this);
+			getLogger().severe("============= PAPER NOT DETECTED =============");
+			getServer().getPluginManager().disablePlugin(this);
 			return;
 		}
 
-		// Check if using Spigot
-		try {
-			Class.forName("org.spigotmc.SpigotConfig");
-		} catch (ClassNotFoundException ex) {
-			getLogger().severe("============= SPIGOT NOT DETECTED =============");
-			getLogger().severe("DeluxeHubReloaded requires Spigot to run, you can download");
-			getLogger().severe("Spigot here: https://www.spigotmc.org/wiki/spigot-installation/.");
-			getLogger().severe("The plugin will now disable.");
-			getLogger().severe("============= SPIGOT NOT DETECTED =============");
-			getPluginLoader().disablePlugin(this);
-			return;
+		// Check server version (requires 1.21+ or 26.x+)
+		String rawVersion = Bukkit.getBukkitVersion().split("-")[0];
+		if (rawVersion.startsWith("1.")) {
+			try {
+				int minor = Integer.parseInt(rawVersion.split("\\.")[1]);
+				if (minor < 21) {
+					getLogger().severe("============= UNSUPPORTED SERVER VERSION =============");
+					getLogger().severe("DeluxeHubReloaded requires Paper 1.21 or newer to run.");
+					getLogger().severe("The plugin will now disable.");
+					getLogger().severe("============= UNSUPPORTED SERVER VERSION =============");
+					getServer().getPluginManager().disablePlugin(this);
+					return;
+				}
+			} catch (NumberFormatException ignored) {}
 		}
 
 		// Enable bStats metrics
@@ -82,6 +85,7 @@ public class DeluxeHubPlugin extends JavaPlugin {
 		// Load config files
 		configManager = new ConfigManager();
 		configManager.loadFiles(this);
+		currentVersion = Version.parse(getPluginMeta().getVersion());
 
 		// If there were any configuration errors we should not continue
 		if (!getServer().getPluginManager().isPluginEnabled(this)) return;
@@ -117,19 +121,6 @@ public class DeluxeHubPlugin extends JavaPlugin {
 		getLogger().log(Level.INFO, "");
 		getLogger().log(Level.INFO, "Successfully loaded in " + (System.currentTimeMillis() - start) + "ms");
 
-		currentVersion = Version.parse(getDescription().getVersion());
-
-		// Initialize and load configurations
-		configManager = new ConfigManager();
-		configManager.loadFiles(this);
-
-		if (IsCompatible()) {
-			getLogger().severe("============= NOT RECOMMENDED SERVER VERSION =============");
-			getLogger().severe("DeluxeHubReloaded requires at least Spigot 1.21.3 to run without issues.");
-			getLogger().severe("Please consider to update your server to a newer version.");
-			getLogger().severe("PvP Mode, Teleportation Bow and some sounds are missing or disabled");
-			getLogger().severe("============= NOT RECOMMENDED SERVER VERSION =============");
-		}
 	}
 
 	public void onDisable() {
@@ -162,25 +153,20 @@ public class DeluxeHubPlugin extends JavaPlugin {
 		} catch (CommandPermissionsException e) {
 			Messages.NO_PERMISSION.send(sender);
 		} catch (MissingNestedCommandException e) {
-			sender.sendMessage(ChatColor.RED + e.getUsage());
+			sender.sendMessage(Component.text(e.getUsage(), NamedTextColor.RED));
 		} catch (CommandUsageException e) {
-			sender.sendMessage(ChatColor.RED + "Usage: " + e.getUsage());
+			sender.sendMessage(Component.text("Usage: " + e.getUsage(), NamedTextColor.RED));
 		} catch (WrappedCommandException e) {
 			if (e.getCause() instanceof NumberFormatException) {
-				sender.sendMessage(ChatColor.RED + "Number expected, string received instead.");
+				sender.sendMessage(Component.text("Number expected, string received instead.", NamedTextColor.RED));
 			} else {
-				sender.sendMessage(ChatColor.RED + "An internal error has occurred. See console.");
+				sender.sendMessage(Component.text("An internal error has occurred. See console.", NamedTextColor.RED));
 				e.printStackTrace();
 			}
 		} catch (CommandException e) {
-			sender.sendMessage(ChatColor.RED + e.getMessage());
+			sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
 		}
 		return true;
-	}
-
-	public static boolean IsCompatible() {
-		String version = Bukkit.getBukkitVersion().split("-")[0];
-		return version.equals("1.21") || version.equals("1.21.1") || version.equals("1.21.2");
 	}
 
 	public HologramManager getHologramManager() {

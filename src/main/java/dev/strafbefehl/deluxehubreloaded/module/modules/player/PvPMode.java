@@ -5,11 +5,12 @@ import dev.strafbefehl.deluxehubreloaded.config.ConfigType;
 import dev.strafbefehl.deluxehubreloaded.config.Messages;
 import dev.strafbefehl.deluxehubreloaded.module.Module;
 import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
+import dev.strafbefehl.deluxehubreloaded.command.commands.FlyCommand;
 import dev.strafbefehl.deluxehubreloaded.module.modules.hotbar.HotbarManager;
 import dev.strafbefehl.deluxehubreloaded.utility.ItemStackBuilder;
 import dev.strafbefehl.deluxehubreloaded.utility.NamespacedKeys;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -36,6 +37,7 @@ public class PvPMode extends Module {
     private final EnumMap<PvPItemType, List<ItemStack>> _items = new EnumMap<>(PvPItemType.class);
     private final List<UUID> _players = new ArrayList<>();
     private final Map<UUID, Integer> _tasks = new HashMap<>();
+    private boolean playerPvPStatus;
 
     public enum PvPSwitcherState {
         PVP_ON,
@@ -68,6 +70,7 @@ public class PvPMode extends Module {
     @Override
     public void onEnable() {
         ConfigurationSection config = getPlugin().getConfigManager().getFile(ConfigType.SETTINGS).getConfig().getConfigurationSection("pvp_mode");
+        playerPvPStatus = getPlugin().getConfigManager().getFile(ConfigType.SETTINGS).getConfig().getBoolean("world_settings.disable_player_pvp");
 		_slot = (short) config.getInt("slot");
         _time_to_toggle = (short) config.getInt("time_to_toggle");
         ConfigurationSection switcherSection = config.getConfigurationSection("switcher");
@@ -90,7 +93,8 @@ public class PvPMode extends Module {
 			ConfigurationSection section = itemsSection.getConfigurationSection(type.name().toLowerCase());
 			if(section == null){
 				if(type == PvPItemType.OTHER){
-					List<LinkedHashMap<String, ?>> list = (List<LinkedHashMap<String, ?>>) itemsSection.getList("other");
+					@SuppressWarnings("unchecked")
+				List<LinkedHashMap<String, ?>> list = (List<LinkedHashMap<String, ?>>) itemsSection.getList("other");
 					if (list != null) {
 						_items.put(type, new ArrayList<>());
 						for (LinkedHashMap<String, ?> map : list) {
@@ -135,7 +139,7 @@ public class PvPMode extends Module {
 			int taskId = _tasks.get(player.getUniqueId());
             scheduler.cancelTask(taskId);
             _tasks.remove(pUUID);
-			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().append(" ").create());
+			player.sendActionBar(Component.empty());
             return;
         }
 		PlayerInventory inv = player.getInventory();
@@ -152,8 +156,8 @@ public class PvPMode extends Module {
 				@Override
 				public void run() {
 					if(timeLeft > 0){
-						player.spigot().
-								sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().appendLegacy(Messages.PVP_MODE_SWITCH_ON_TIME.toString().replaceAll("&", "§").replace("%time%", ""+timeLeft)).create());
+						player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+								Messages.PVP_MODE_SWITCH_ON_TIME.toString().replaceAll("&", "§").replace("%time%", ""+timeLeft)));
 						timeLeft--;
 					}else {
 						if (player.isOnline()) {
@@ -198,7 +202,10 @@ public class PvPMode extends Module {
 							inv.setItem(8, _switcher.get(PvPSwitcherState.PVP_ON));
 							getPlugin().getServer().getScheduler().cancelTask(_tasks.get(pUUID));
 							_tasks.remove(pUUID);
-							player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().appendLegacy(Messages.PVP_MODE_LETS_FIGHT.toString().replaceAll("&", "§")).create());
+							player.setAllowFlight(false);
+							player.setFlying(false);
+							player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+									Messages.PVP_MODE_LETS_FIGHT.toString().replaceAll("&", "§")));
 						}
 					}
 				}
@@ -210,8 +217,8 @@ public class PvPMode extends Module {
 				@Override
 				public void run() {
 					if (timeLeft > 0) {
-						player.spigot().
-								sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().appendLegacy(Messages.PVP_MODE_SWITCH_OFF_TIME.toString().replaceAll("&", "§").replace("%time%", ""+timeLeft)).create());
+						player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+								Messages.PVP_MODE_SWITCH_OFF_TIME.toString().replaceAll("&", "§").replace("%time%", ""+timeLeft)));
 						timeLeft--;
 					} else {
 						if (player.isOnline()) {
@@ -227,7 +234,10 @@ public class PvPMode extends Module {
 							hotbarManager.changeToJoinSlot(player);
 							getPlugin().getServer().getScheduler().cancelTask(_tasks.get(pUUID));
 							_tasks.remove(pUUID);
-							player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder().append(" ").create());
+							boolean shouldHaveFlight = getPlugin().getModuleManager().isEnabled(ModuleType.DOUBLE_JUMP)
+									|| Boolean.TRUE.equals(FlyCommand.allowPlayerFly.get(pUUID));
+							player.setAllowFlight(shouldHaveFlight);
+							player.sendActionBar(Component.empty());
 						}
 					}
 				}
@@ -239,7 +249,6 @@ public class PvPMode extends Module {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onItemMove(InventoryClickEvent ev) {
 		if (!(ev.getWhoClicked() instanceof Player)) return;
-		Player player = (Player) ev.getWhoClicked();
 		ItemStack movedItem = ev.getCurrentItem();
 		if(movedItem == null) return;
 		if(!movedItem.hasItemMeta()) return;
@@ -253,6 +262,7 @@ public class PvPMode extends Module {
 	public void onEntityAttack(EntityDamageByEntityEvent ev) {
 		if (!(ev.getDamager() instanceof Player)) return;
 		if (!(ev.getEntity() instanceof Player)) return;
+        if (!playerPvPStatus) return;
 		Player attacker = (Player) ev.getDamager();
 		Player target = (Player) ev.getEntity();
 		if (!_players.contains(attacker.getUniqueId()) || !_players.contains(target.getUniqueId())) {
@@ -269,6 +279,7 @@ public class PvPMode extends Module {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onEntityDamage(EntityDamageEvent event) {
 		if (event.getEntity() instanceof Player) {
+            if (!playerPvPStatus) return;
 			EntityDamageEvent.DamageCause cause = event.getCause();
 			Player damageTarget = (Player) event.getEntity();
 			if(!_players.contains(damageTarget.getUniqueId())) return;

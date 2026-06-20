@@ -5,6 +5,7 @@ import dev.strafbefehl.deluxehubreloaded.command.commands.FlyCommand;
 import dev.strafbefehl.deluxehubreloaded.config.ConfigType;
 import dev.strafbefehl.deluxehubreloaded.module.Module;
 import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -37,10 +38,22 @@ public class DoubleJump extends Module {
 
 		if (launch > 4.0) launch = 4.0;
 		if (launchY > 4.0) launchY = 4.0;
+
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) continue;
+			if (inDisabledWorld(player.getLocation())) continue;
+			player.setAllowFlight(true);
+		}
 	}
 
 	@Override
 	public void onDisable() {
+		for (Player player : Bukkit.getOnlinePlayers()) {
+			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) continue;
+			if (Boolean.TRUE.equals(FlyCommand.allowPlayerFly.get(player.getUniqueId()))) continue;
+			player.setAllowFlight(false);
+			player.setFlying(false);
+		}
 	}
 
 	@EventHandler
@@ -55,7 +68,12 @@ public class DoubleJump extends Module {
 		else if (inDisabledWorld(player.getLocation())) return;
 		else if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
 		else if (!event.isFlying()) return;
-		// All pre-checks passed, now handle double jump
+
+		PvPMode pvpMode = (PvPMode) getPlugin().getModuleManager().getModule(ModuleType.PVP_MODE);
+		if (pvpMode != null && pvpMode.isPlayerInPvPMode(player.getUniqueId())) {
+			event.setCancelled(true);
+			return;
+		}
 
 
 		// Check for cooldown
@@ -73,6 +91,7 @@ public class DoubleJump extends Module {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
+				if (pvpMode != null && pvpMode.isPlayerInPvPMode(player.getUniqueId())) return;
 				player.setAllowFlight(true);
 				event.setCancelled(true);
 			}
@@ -90,7 +109,8 @@ public class DoubleJump extends Module {
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
+		if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR
+				&& !inDisabledWorld(player.getLocation()))
 			player.getPlayer().setAllowFlight(true);
 	}
 }

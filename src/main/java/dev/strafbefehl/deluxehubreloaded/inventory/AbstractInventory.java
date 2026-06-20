@@ -3,6 +3,7 @@ package dev.strafbefehl.deluxehubreloaded.inventory;
 import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
 import dev.strafbefehl.deluxehubreloaded.utility.ItemStackBuilder;
 import dev.strafbefehl.deluxehubreloaded.utility.NamespacedKeys;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,6 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public abstract class AbstractInventory implements Listener {
@@ -46,9 +48,23 @@ public abstract class AbstractInventory implements Listener {
 	}
 
 	public Inventory refreshInventory(Player player, Inventory inventory) {
-		for (int i = 0; i < inventory.getSize(); i++) {
-			ItemStack item = getInventory().getItem(i);
-			if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) continue;
+		if (!(inventory.getHolder() instanceof InventoryBuilder holder)) return inventory;
+
+		for (Map.Entry<Integer, List<InventoryItem>> entry : holder.getIcons().entrySet()) {
+			int slot = entry.getKey();
+			InventoryItem inventoryItem = holder.getIcon(slot, player);
+
+			if (inventoryItem == null) {
+				inventory.setItem(slot, null);
+				continue;
+			}
+
+			ItemStack item = inventoryItem.getItemStack().clone();
+			if (item.getType() == Material.AIR || !item.hasItemMeta()) {
+				inventory.setItem(slot, item);
+				continue;
+			}
+
 			if (item.getType() == Material.PLAYER_HEAD) {
 				ItemMeta itemMeta = item.getItemMeta();
 				if (itemMeta != null) {
@@ -56,16 +72,21 @@ public abstract class AbstractInventory implements Listener {
 					if (dataContainer.get(NamespacedKeys.Keys.PLAYER_HEAD.get(), PersistentDataType.BOOLEAN) != null) {
 						SkullMeta meta = (SkullMeta) item.getItemMeta();
 						if (meta != null) {
-							meta.setOwnerProfile(player.getPlayerProfile());
+							meta.setPlayerProfile(player.getPlayerProfile());
 							item.setItemMeta(meta);
 						}
 					}
 				}
 			}
-			ItemStackBuilder newItem = new ItemStackBuilder(item.clone());
-			if (item.getItemMeta().hasDisplayName()) newItem.withName(item.getItemMeta().getDisplayName(), player);
-			if (item.getItemMeta().hasLore()) newItem.withLore(item.getItemMeta().getLore(), player);
-			inventory.setItem(i, newItem.build());
+
+			ItemStackBuilder newItem = new ItemStackBuilder(item);
+			if (item.getItemMeta().hasDisplayName()) newItem.withName(
+					LegacyComponentSerializer.legacySection().serialize(item.getItemMeta().displayName()), player);
+			if (item.getItemMeta().hasLore()) newItem.withLore(
+					item.getItemMeta().lore().stream()
+							.map(c -> LegacyComponentSerializer.legacySection().serialize(c))
+							.toList(), player);
+			inventory.setItem(slot, newItem.build());
 		}
 		return inventory;
 	}

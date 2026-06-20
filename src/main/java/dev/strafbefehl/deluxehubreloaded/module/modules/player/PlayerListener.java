@@ -7,9 +7,11 @@ import dev.strafbefehl.deluxehubreloaded.module.Module;
 import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
 import dev.strafbefehl.deluxehubreloaded.utility.PlaceholderUtil;
 import dev.strafbefehl.deluxehubreloaded.utility.TextUtil;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
@@ -68,7 +70,7 @@ public class PlayerListener extends Module {
 			fireworkType = config.getString("join_settings.firework.type", "BALL_LARGE");
 			fireworkPower = config.getInt("join_settings.firework.power", 1);
 			fireworkFlicker = config.getBoolean("join_settings.firework.flicker", true);
-			fireworkTrail = config.getBoolean("join_settings.firework.power", true);
+			fireworkTrail = config.getBoolean("join_settings.firework.trail", true);
 
 			fireworkColors = new ArrayList<>();
 			config.getStringList("join_settings.firework.colors").forEach(c -> {
@@ -90,17 +92,17 @@ public class PlayerListener extends Module {
 
 		// Join message handling
 		if (joinQuitMessagesEnabled) {
-			if (joinMessage.equals("")) event.setJoinMessage(null);
+			if (joinMessage.equals("")) event.joinMessage(null);
 			else {
 				String message = PlaceholderUtil.setPlaceholders(joinMessage, player);
-				event.setJoinMessage(TextUtil.color(message));
+				event.joinMessage(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(message)));
 			}
 		}
 
 		// Heal the player
 		if (spawnHeal) {
 			player.setFoodLevel(20);
-			player.setHealth(player.getMaxHealth());
+			player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
 		}
 
 		// Extinguish
@@ -131,10 +133,10 @@ public class PlayerListener extends Module {
 		if (inDisabledWorld(player.getLocation())) return;
 
 		if (joinQuitMessagesEnabled) {
-			if (quitMessage.equals("")) event.setQuitMessage(null);
+			if (quitMessage.equals("")) event.quitMessage(null);
 			else {
 				String message = PlaceholderUtil.setPlaceholders(quitMessage, player);
-				event.setQuitMessage(TextUtil.color(message));
+				event.quitMessage(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(message)));
 			}
 		}
 

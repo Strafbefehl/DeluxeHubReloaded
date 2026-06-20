@@ -3,8 +3,10 @@ package dev.strafbefehl.deluxehubreloaded.module.modules.hotbar.items;
 import dev.strafbefehl.deluxehubreloaded.config.ConfigType;
 import dev.strafbefehl.deluxehubreloaded.config.Messages;
 import dev.strafbefehl.deluxehubreloaded.cooldown.CooldownType;
+import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
 import dev.strafbefehl.deluxehubreloaded.module.modules.hotbar.HotbarItem;
 import dev.strafbefehl.deluxehubreloaded.module.modules.hotbar.HotbarManager;
+import dev.strafbefehl.deluxehubreloaded.module.modules.player.PlayerVanish;
 import dev.strafbefehl.deluxehubreloaded.utility.ItemStackBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -46,6 +48,15 @@ public class PlayerHider extends HotbarItem {
 		cooldown = config.getInt("player_hider.cooldown");
 	}
 
+	public boolean isHiding(Player player) {
+		return hidden.contains(player.getUniqueId());
+	}
+
+	private boolean isVanished(Player player) {
+		PlayerVanish vanishModule = (PlayerVanish) getPlugin().getModuleManager().getModule(ModuleType.VANISH);
+		return vanishModule != null && vanishModule.isVanished(player);
+	}
+
 	@Override
 	protected void onInteract(Player player) {
 
@@ -56,7 +67,7 @@ public class PlayerHider extends HotbarItem {
 
 		if (!hidden.contains(player.getUniqueId())) {
 			for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-				player.hidePlayer(pl);
+				player.hidePlayer(getPlugin(), pl);
 			}
 			hidden.add(player.getUniqueId());
 			Messages.PLAYER_HIDER_HIDDEN.send(player);
@@ -64,7 +75,8 @@ public class PlayerHider extends HotbarItem {
 			player.getInventory().setItem(getSlot(), hiddenItem);
 		} else {
 			for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-				player.showPlayer(pl);
+				player.showPlayer(getPlugin(), pl);
+				if (isVanished(pl)) player.hidePlayer(getPlugin(), pl);
 			}
 			hidden.remove(player.getUniqueId());
 			Messages.PLAYER_HIDER_SHOWN.send(player);
@@ -79,7 +91,8 @@ public class PlayerHider extends HotbarItem {
 
 		if (hidden.contains(player.getUniqueId())) {
 			for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-				player.showPlayer(pl);
+				player.showPlayer(getPlugin(), pl);
+				if (isVanished(pl)) player.hidePlayer(getPlugin(), pl);
 			}
 		}
 		hidden.remove(player.getUniqueId());
@@ -89,7 +102,7 @@ public class PlayerHider extends HotbarItem {
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		hidden.forEach(uuid -> {
-			Bukkit.getPlayer(uuid).hidePlayer(player);
+			Bukkit.getPlayer(uuid).hidePlayer(getPlugin(), player);
 		});
 	}
 
@@ -97,7 +110,10 @@ public class PlayerHider extends HotbarItem {
 	public void onWorldChange(PlayerChangedWorldEvent event) {
 		Player player = event.getPlayer();
 		if (getHotbarManager().inDisabledWorld(player.getLocation()) && hidden.contains(player.getUniqueId())) {
-			for (Player p : Bukkit.getOnlinePlayers()) player.showPlayer(p);
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				player.showPlayer(getPlugin(), p);
+				if (isVanished(p)) player.hidePlayer(getPlugin(), p);
+			}
 			hidden.remove(player.getUniqueId());
 		}
 	}
@@ -107,7 +123,8 @@ public class PlayerHider extends HotbarItem {
 		Player player = event.getPlayer();
 		if (hidden.contains(player.getUniqueId())) {
 			for (Player p : Bukkit.getOnlinePlayers()) {
-				player.showPlayer(p);
+				player.showPlayer(getPlugin(), p);
+				if (isVanished(p)) player.hidePlayer(getPlugin(), p);
 			}
 			hidden.remove(player.getUniqueId());
 		}

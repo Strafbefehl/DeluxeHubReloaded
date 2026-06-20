@@ -10,11 +10,12 @@ public class HexUtils {
 	public static final Pattern HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})");
 
 
+	@SuppressWarnings("deprecation")
 	public static String colorize(final String message) {
 		return ChatColor.translateAlternateColorCodes('&', message);
 	}
 
-
+	@SuppressWarnings("deprecation")
 	public static String translateHexColorCodes(final String message) {
 		final char colorChar = ChatColor.COLOR_CHAR;
 

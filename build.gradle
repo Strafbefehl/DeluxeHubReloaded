@@ -1,16 +1,15 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.gradleup.shadow' version '9.4.2'
     id 'xyz.jpenilla.run-paper' version '2.3.1'
 }
 
 group = 'dev.strafbefehl'
-version = '3.7.2'
+version = '3.7.4-beta.1'
 description = 'An all-in-one hub management system'
 
 repositories {
     mavenCentral()
-    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url 'https://oss.sonatype.org/content/groups/public/' }
     maven { url 'https://jitpack.io' }
     maven { url 'https://repo.codemc.org/repository/maven-public' }
@@ -23,8 +22,7 @@ repositories {
 
 dependencies {
     // Provided dependencies
-    compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'net.md-5:bungeecord-chat:1.16-R0.1'
+    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
     compileOnly 'com.mojang:authlib:1.5.25'
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'de.tr7zw:item-nbt-api:2.14.0'
@@ -34,25 +32,25 @@ dependencies {
     implementation 'org.bstats:bstats-bukkit-lite:1.7'
     implementation 'javax.inject:javax.inject:1'
     implementation 'javax.annotation:javax.annotation-api:1.2'
-    implementation 'com.github.BGMP.CommandFramework:command-framework-bukkit:master'
+    implementation('com.github.BGMP.CommandFramework:command-framework-bukkit:master') {
+        exclude group: 'org.bukkit', module: 'bukkit'
+    }
     implementation 'co.aikar:acf-paper:0.5.1-SNAPSHOT'
     implementation 'net.kyori:adventure-api:4.21.0'
 }
 
 tasks {
     runServer {
-        minecraftVersion("1.21")
+        minecraftVersion("26.1.2")
     }
 
     shadowJar {
         archiveClassifier.set('')
 
-        // Relocate libraries to avoid conflicts
         relocate 'org.bstats', 'dev.strafbefehl.deluxehubreloaded.libs.metrics'
         relocate 'cl.bgmp', 'dev.strafbefehl.deluxehubreloaded.libs.command'
         relocate 'co.aikar', 'dev.strafbefehl.deluxehubreloaded.libs.aikar'
 
-        // Include only specified dependencies
         dependencies {
             include(dependency('org.bstats:bstats-bukkit-lite'))
             include(dependency('com.github.BGMP.CommandFramework:command-framework-bukkit'))
@@ -66,22 +64,13 @@ tasks {
     }
 }
 
-def targetJavaVersion = 9
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
-    }
 }
 
 processResources {
@@ -94,6 +83,9 @@ processResources {
     inputs.properties props
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
+        expand props
+    }
+    filesMatching('paper-plugin.yml') {
         expand props
     }
 }

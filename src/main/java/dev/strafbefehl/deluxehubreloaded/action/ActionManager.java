@@ -3,7 +3,7 @@ package dev.strafbefehl.deluxehubreloaded.action;
 import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
 import dev.strafbefehl.deluxehubreloaded.action.actions.*;
 import dev.strafbefehl.deluxehubreloaded.utility.PlaceholderUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;

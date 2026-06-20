@@ -24,7 +24,7 @@ public class ConfigMigrator {
      */
     public ConfigMigrator(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.currentVersion = Version.parse(plugin.getDescription().getVersion());
+        this.currentVersion = Version.parse(plugin.getPluginMeta().getVersion());
         this.versionMigrations = new ArrayList<>();
         this.excludedPaths = new HashSet<>();
 
@@ -222,6 +222,7 @@ public class ConfigMigrator {
         private final Version targetVersion;
         private final MigrationFunction migrationFunction;
 
+        @SuppressWarnings("unused")
         public VersionMigration(Version sourceVersion, Version targetVersion,
                                 MigrationFunction migrationFunction) {
             this.sourceVersion = sourceVersion;
@@ -250,18 +251,4 @@ public class ConfigMigrator {
         boolean migrate(ConfigType configType, FileConfiguration config);
     }
 
-    // Example version-specific migration function
-    private boolean migrateFrom1_0_0To1_1_0(ConfigType configType, FileConfiguration config) {
-        boolean changes = false;
-
-        // Example: Rename a configuration key
-        if (configType == ConfigType.SETTINGS && config.contains("old-setting")) {
-            Object value = config.get("old-setting");
-            config.set("new-setting", value);
-            config.set("old-setting", null);
-            changes = true;
-        }
-
-        return changes;
-    }
 }

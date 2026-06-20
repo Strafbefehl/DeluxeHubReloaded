@@ -56,15 +56,10 @@ public class TeleportationBow extends Module {
                 getPlugin().getLogger().warning("Invalid entity type for teleportation bow. Defaulting to ARROW.");
                 throw new IllegalArgumentException("Invalid entity type for teleportation bow.");
             }
-			switch(_entityType){
-				case BREEZE_WIND_CHARGE:
-				case DRAGON_FIREBALL:
-				case FIREBALL:
-				case SMALL_FIREBALL:
-				case WITHER_SKULL:
-				case FISHING_BOBBER:{
-					throw new IllegalArgumentException("[BREEZE_WIND_CHARGE, DRAGON_FIREBALL, FIREBALL, SMALL_FIREBALL, WITHER_SKULL, FISHING_BOBBER] are not allowed (for now) for teleportation bow. Defaulting to ARROW.");
-				}
+			if (Set.of(EntityType.BREEZE_WIND_CHARGE, EntityType.DRAGON_FIREBALL, EntityType.FIREBALL,
+					EntityType.SMALL_FIREBALL, EntityType.WITHER_SKULL, EntityType.FISHING_BOBBER)
+					.contains(_entityType)) {
+				throw new IllegalArgumentException("[BREEZE_WIND_CHARGE, DRAGON_FIREBALL, FIREBALL, SMALL_FIREBALL, WITHER_SKULL, FISHING_BOBBER] are not allowed (for now) for teleportation bow. Defaulting to ARROW.");
 			}
         }catch(IllegalArgumentException e) {
             _entityType = EntityType.ARROW;
@@ -130,7 +125,9 @@ public class TeleportationBow extends Module {
             launchedProjectile.remove();
 			if(_entityType.getEntityClass() == null) return;
 			ev.setCancelled(true);
-			launchedProjectile = player.launchProjectile((Class <? extends Projectile>) _entityType.getEntityClass(), ev.getProjectile().getVelocity());
+			@SuppressWarnings("unchecked")
+			Class<? extends Projectile> projectileClass = (Class<? extends Projectile>) _entityType.getEntityClass();
+			launchedProjectile = player.launchProjectile(projectileClass, ev.getProjectile().getVelocity());
 		}
 		if(launchedProjectile instanceof AbstractArrow) ((AbstractArrow) launchedProjectile).setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		_entityShot.remove(player.getUniqueId());

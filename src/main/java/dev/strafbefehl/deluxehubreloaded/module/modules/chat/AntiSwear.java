@@ -7,9 +7,10 @@ import dev.strafbefehl.deluxehubreloaded.config.Messages;
 import dev.strafbefehl.deluxehubreloaded.module.Module;
 import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
 import org.bukkit.Bukkit;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.util.List;
 
@@ -31,12 +32,12 @@ public class AntiSwear extends Module {
 	}
 
 	@EventHandler
-	public void onPlayerChat(AsyncPlayerChatEvent event) {
+	public void onPlayerChat(AsyncChatEvent event) {
 
 		Player player = event.getPlayer();
 		if (player.hasPermission(Permissions.ANTI_SWEAR_BYPASS.getPermission())) return;
 
-		String message = event.getMessage();
+		String message = PlainTextComponentSerializer.plainText().serialize(event.message());
 
 		for (String word : blockedWords) {
 			if (message.toLowerCase().contains(word.toLowerCase())) {

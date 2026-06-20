@@ -1,8 +1,6 @@
 package dev.strafbefehl.deluxehubreloaded.utility;
 
-import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
 import org.bukkit.NamespacedKey;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public class NamespacedKeys{
 	public enum Keys {
@@ -25,12 +23,7 @@ public class NamespacedKeys{
 		}
 	}
 
-	public static void registerKeys(){
-		DeluxeHubPlugin plugin = JavaPlugin.getPlugin(DeluxeHubPlugin.class);
-		for(Keys keys : Keys.values()){
-			NamespacedKey key = new NamespacedKey(plugin, keys.getKey());
-		}
-	}
+	public static void registerKeys(){}
 }
 
 

@@ -31,12 +31,13 @@ import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class WorldProtect extends Module {
-    FileConfiguration config = getConfig(ConfigType.SETTINGS);
+    private FileConfiguration config;
     private final List<Material> interactables = Arrays.asList(
             Material.ANVIL,
             Material.ARMOR_STAND,
@@ -101,6 +102,7 @@ public class WorldProtect extends Module {
     private boolean playerPvP;
     private boolean playerDrowning;
     private boolean fireDamage;
+    private boolean hidePotionIcons;
 
     public WorldProtect(DeluxeHubPlugin plugin) {
         super(plugin, ModuleType.WORLD_PROTECT);
@@ -108,7 +110,7 @@ public class WorldProtect extends Module {
 
     @Override
     public void onEnable() {
-        FileConfiguration config = getConfig(ConfigType.SETTINGS);
+        config = getConfig(ConfigType.SETTINGS);
         hungerLoss = config.getBoolean("world_settings.disable_hunger_loss");
         fallDamage = config.getBoolean("world_settings.disable_fall_damage");
         playerPvP = config.getBoolean("world_settings.disable_player_pvp");
@@ -126,10 +128,43 @@ public class WorldProtect extends Module {
         leafDecay = config.getBoolean("world_settings.disable_block_leaf_decay");
         playerDrowning = config.getBoolean("world_settings.disable_drowning");
         fireDamage = config.getBoolean("world_settings.disable_fire_damage");
+        hidePotionIcons = config.getBoolean("world_settings.hide_potion_icons");
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (inDisabledWorld(player.getLocation())) continue;
+            for (PotionEffect effect : player.getActivePotionEffects()) {
+                boolean needsUpdate = hidePotionIcons
+                        ? (effect.hasIcon() || effect.hasParticles())
+                        : (!effect.hasIcon() && !effect.hasParticles());
+                if (!needsUpdate) continue;
+                player.addPotionEffect(new PotionEffect(
+                        effect.getType(), effect.getDuration(), effect.getAmplifier(),
+                        effect.isAmbient(), !hidePotionIcons, !hidePotionIcons
+                ));
+            }
+        }
     }
 
     @Override
     public void onDisable() {
+    }
+
+    @EventHandler
+    public void onPotionEffect(EntityPotionEffectEvent event) {
+        if (!hidePotionIcons) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (inDisabledWorld(player.getLocation())) return;
+        PotionEffect newEffect = event.getNewEffect();
+        if (newEffect == null || (!newEffect.hasIcon() && !newEffect.hasParticles())) return;
+        event.setCancelled(true);
+        player.addPotionEffect(new PotionEffect(
+                newEffect.getType(),
+                newEffect.getDuration(),
+                newEffect.getAmplifier(),
+                newEffect.isAmbient(),
+                false,
+                false
+        ));
     }
 
     // Prevent sign editing
@@ -296,7 +331,7 @@ public class WorldProtect extends Module {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerPickupEvent(EntityPickupItemEvent event) {
-        if (!itemDrop) return;
+        if (!itemPickup) return;
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
             if (inDisabledWorld(player.getLocation())) return;
@@ -338,7 +373,7 @@ public class WorldProtect extends Module {
         if (BuildMode.getInstance().isPresent(event.getEntity().getUniqueId())) event.setKeepInventory(true);
         event.getDrops().clear();
         event.setKeepLevel(true);
-        event.setDeathMessage(null);
+        event.deathMessage(null);
     }
 
     @EventHandler
@@ -358,6 +393,7 @@ public class WorldProtect extends Module {
                 break;
             case FIRE:
             case FIRE_TICK:
+                if (!playerPvP) return;
                 if (config.getBoolean("pvp_mode.enabled")) {
                     if (pvpMode.isPlayerInPvPMode(player.getUniqueId())) return;
                 }
@@ -374,6 +410,8 @@ public class WorldProtect extends Module {
                 }
                 break;
             }
+            default:
+                break;
         }
     }
 
@@ -381,73 +419,64 @@ public class WorldProtect extends Module {
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!playerPvP) return;
 
-        if (!(event.getEntity() instanceof Player)) return;
-
-        Player victim = (Player) event.getEntity();
-
+        if (!(event.getEntity() instanceof Player victim)) return;
         if (inDisabledWorld(victim.getLocation())) return;
 
-        if (event.getDamager() instanceof Player) {
-            Player attacker = (Player) event.getDamager();
-            if (config.getBoolean("pvp_mode.enabled")) {
-                PvPMode pvpMode = (PvPMode) getPlugin().getModuleManager().getModule(ModuleType.PVP_MODE);
-                if (pvpMode.isPlayerInPvPMode(attacker.getUniqueId())) {
-                    if (!pvpMode.isPlayerInPvPMode(victim.getUniqueId())) {
-                        if (tryCooldown(attacker.getUniqueId(), CooldownType.VICTIM_NOT_IN_PVP_MODE, 3)) {
-                            Messages.PVP_MODE_VICTIM_NOT_IN_PVP_MODE.send(attacker, "%victim%", victim.getDisplayName());
-                        }
-                        event.setCancelled(true);
-                    }
-                    return;
-                }
-                if (pvpMode.isPlayerInPvPMode(attacker.getUniqueId()) && pvpMode.isPlayerInPvPMode(victim.getUniqueId()))
-                    return;
-            }
-            event.setCancelled(true);
+        Player attacker = null;
+        if (event.getDamager() instanceof Player p) {
+            attacker = p;
+        } else if (event.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+            attacker = p;
         }
+        if (attacker == null) return;
 
-        if (event.getDamager() instanceof Projectile) {
-            Projectile projectile = (Projectile) event.getDamager();
-            if (projectile.getShooter() instanceof Player) {
-                Player attacker = (Player) projectile.getShooter();
-                if (config.getBoolean("pvp_mode.enabled")) {
-                    PvPMode pvpMode = (PvPMode) getPlugin().getModuleManager().getModule(ModuleType.PVP_MODE);
-                    if (pvpMode.isPlayerInPvPMode(attacker.getUniqueId()) && pvpMode.isPlayerInPvPMode(victim.getUniqueId()))
-                        return;
+        if (config.getBoolean("pvp_mode.enabled")) {
+            PvPMode pvpMode = (PvPMode) getPlugin().getModuleManager().getModule(ModuleType.PVP_MODE);
+            if (pvpMode.isPlayerInPvPMode(attacker.getUniqueId())) {
+                if (!pvpMode.isPlayerInPvPMode(victim.getUniqueId())) {
+                    if (tryCooldown(attacker.getUniqueId(), CooldownType.VICTIM_NOT_IN_PVP_MODE, 3)) {
+                        Messages.PVP_MODE_VICTIM_NOT_IN_PVP_MODE.send(attacker, "%victim%", victim.getName());
+                    }
+                    event.setCancelled(true);
                 }
-                event.setCancelled(true);
+                return;
             }
         }
 
         if (config.getBoolean("legacySystems.permissionsEnabled")) {
-            if (event.getDamager().hasPermission(Permissions.EVENT_PLAYER_PVP.getPermission())) return;
+            if (attacker.hasPermission(Permissions.EVENT_PLAYER_PVP.getPermission())) return;
         }
 
-
         event.setCancelled(true);
-        if (tryCooldown(event.getDamager().getUniqueId(), CooldownType.PLAYER_PVP, 3)) {
-            Messages.EVENT_PLAYER_PVP.send(event.getDamager());
+        if (tryCooldown(attacker.getUniqueId(), CooldownType.PLAYER_PVP, 3)) {
+            Messages.EVENT_PLAYER_PVP.send(attacker);
         }
     }
 
-    // Prevent destroying of item frame/paintings
+    // Prevent destroying of item frame/paintings (including via projectiles)
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDestroy(HangingBreakByEntityEvent event) {
         if (!blockBreak || inDisabledWorld(event.getEntity().getLocation())) return;
         Entity entity = event.getEntity();
-        Entity player = event.getRemover();
+        if (!(entity instanceof Painting) && !(entity instanceof ItemFrame)) return;
 
-        if (entity instanceof Painting || entity instanceof ItemFrame && player instanceof Player) {
-            if (player != null) {
-                if (config.getBoolean("legacySystems.permissionsEnabled")) {
-                    if (player.hasPermission(Permissions.EVENT_BLOCK_BREAK.getPermission())) return;
-                }
-                if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
-                event.setCancelled(true);
-                if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_BREAK, 3)) {
-                    Messages.EVENT_BLOCK_BREAK.send(player);
-                }
-            }
+        Entity remover = event.getRemover();
+        Player player = null;
+        if (remover instanceof Player p) {
+            player = p;
+        } else if (remover instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+            player = p;
+        }
+
+        if (player == null) return;
+
+        if (config.getBoolean("legacySystems.permissionsEnabled")) {
+            if (player.hasPermission(Permissions.EVENT_BLOCK_BREAK.getPermission())) return;
+        }
+        if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
+        event.setCancelled(true);
+        if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_BREAK, 3)) {
+            Messages.EVENT_BLOCK_BREAK.send(player);
         }
     }
 
@@ -470,23 +499,29 @@ public class WorldProtect extends Module {
         }
     }
 
-    // Prevent items being taken from item frames
+    // Prevent items being taken from item frames (including via projectiles)
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!blockInteract || inDisabledWorld(event.getEntity().getLocation())) return;
-        Entity entity = event.getEntity();
-        Entity damager = event.getDamager();
+        if (!(event.getEntity() instanceof ItemFrame)) return;
 
-        if (entity instanceof ItemFrame && damager instanceof Player) {
-            Player player = (Player) damager;
-            if (config.getBoolean("legacySystems.permissionsEnabled")) {
-                if (player.hasPermission(Permissions.EVENT_BLOCK_INTERACT.getPermission())) return;
-            }
-            if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
-            event.setCancelled(true);
-            if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_INTERACT, 3)) {
-                Messages.EVENT_BLOCK_INTERACT.send(player);
-            }
+        Entity damager = event.getDamager();
+        Player player = null;
+        if (damager instanceof Player p) {
+            player = p;
+        } else if (damager instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+            player = p;
+        }
+
+        if (player == null) return;
+
+        if (config.getBoolean("legacySystems.permissionsEnabled")) {
+            if (player.hasPermission(Permissions.EVENT_BLOCK_INTERACT.getPermission())) return;
+        }
+        if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
+        event.setCancelled(true);
+        if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_INTERACT, 3)) {
+            Messages.EVENT_BLOCK_INTERACT.send(player);
         }
     }
 
@@ -550,20 +585,26 @@ public class WorldProtect extends Module {
     @EventHandler(priority = EventPriority.HIGH)
     public void onVehicleBreak(VehicleDestroyEvent event) {
         if (!blockBreak || inDisabledWorld(event.getVehicle().getLocation())) return;
+        if (!(event.getVehicle() instanceof Boat) && !(event.getVehicle() instanceof Minecart)) return;
 
-        if (!(event.getAttacker() instanceof Player)) return;
-        Player player = (Player) event.getAttacker();
+        Entity attacker = event.getAttacker();
+        Player player = null;
+        if (attacker instanceof Player p) {
+            player = p;
+        } else if (attacker instanceof Projectile proj && proj.getShooter() instanceof Player p) {
+            player = p;
+        }
+
+        if (player == null) return;
 
         if (config.getBoolean("legacySystems.permissionsEnabled")) {
             if (player.hasPermission(Permissions.EVENT_BLOCK_BREAK.getPermission())) return;
         }
         if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
 
-        if (event.getVehicle() instanceof Boat || event.getVehicle() instanceof Minecart) {
-            event.setCancelled(true);
-            if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_BREAK, 3)) {
-                Messages.EVENT_BLOCK_BREAK.send(player);
-            }
+        event.setCancelled(true);
+        if (tryCooldown(player.getUniqueId(), CooldownType.BLOCK_BREAK, 3)) {
+            Messages.EVENT_BLOCK_BREAK.send(player);
         }
     }
 
@@ -583,6 +624,22 @@ public class WorldProtect extends Module {
                 }
             }
         }
+    }
+
+    // Prevent decorated pots being shattered by projectiles
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onProjectileHitDecoratedPot(ProjectileHitEvent event) {
+        if (!blockBreak || event.getHitBlock() == null) return;
+        if (inDisabledWorld(event.getHitBlock().getLocation())) return;
+        if (event.getHitBlock().getType() != Material.DECORATED_POT) return;
+        if (!(event.getEntity().getShooter() instanceof Player player)) return;
+
+        if (config.getBoolean("legacySystems.permissionsEnabled")) {
+            if (player.hasPermission(Permissions.EVENT_BLOCK_BREAK.getPermission())) return;
+        }
+        if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
+
+        event.setCancelled(true);
     }
 
     @EventHandler

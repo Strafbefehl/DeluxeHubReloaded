@@ -1,12 +1,30 @@
 name: ${name}
-authors: ["Athar42", "Strafbefehl", "ItsLewizzz"]
-version: ${version}
-description: ${description}
-website: ${url}
-api-version: 26.1
+version: '${version}'
 main: dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin
-loadbefore: [Essentials]
-softdepend: [PlaceholderAPI, HeadDatabase, Multiverse-Core]
+description: ${description}
+authors: ["Athar42", "Strafbefehl", "ItsLewizzz"]
+website: ${url}
+api-version: '26.1'
+
+dependencies:
+  server:
+    Essentials:
+      load: AFTER
+      required: false
+      join-classpath: false
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    HeadDatabase:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    Multiverse-Core:
+      load: BEFORE
+      required: false
+      join-classpath: false
+
 permissions:
   deluxehub.*:
     description: Gives access to all DeluxeHub permissions

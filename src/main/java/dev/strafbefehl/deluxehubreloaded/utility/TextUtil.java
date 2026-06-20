@@ -51,6 +51,7 @@ public class TextUtil {
 
 	}
 
+	@SuppressWarnings("deprecation")
 	public static String fromList(List<?> list) {
 		if (list == null || list.isEmpty()) return null;
 		StringBuilder builder = new StringBuilder();

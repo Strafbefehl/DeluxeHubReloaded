@@ -2,6 +2,7 @@ package dev.strafbefehl.deluxehubreloaded.module.modules.visual.tablist;
 
 import com.google.common.base.Strings;
 import dev.strafbefehl.deluxehubreloaded.utility.TextUtil;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 
 import java.util.Objects;
@@ -11,41 +12,15 @@ public class TablistHelper {
 	public static void sendTabList(Player player, String header, String footer) {
 
 		Objects.requireNonNull(player, "Cannot update tab for null player");
+		String displayName = LegacyComponentSerializer.legacySection().serialize(player.displayName());
 		header = Strings.isNullOrEmpty(header) ?
-				"" : TextUtil.color(header).replace("%player%", player.getDisplayName());
+				"" : TextUtil.color(header).replace("%player%", displayName);
 		footer = Strings.isNullOrEmpty(footer) ?
-				"" : TextUtil.color(footer).replace("%player%", player.getDisplayName());
+				"" : TextUtil.color(footer).replace("%player%", displayName);
 
-//		if (XMaterial.supports(13)) {
-			player.setPlayerListHeaderFooter(header, footer);
-			return;
-//		}
-
-//		try {
-//			Method chatComponentBuilderMethod = ReflectionUtils.getNMSClass("IChatBaseComponent").getDeclaredClasses()[0].getMethod("a", String.class);
-//			Object tabHeader = chatComponentBuilderMethod.invoke(null, "{\"text\":\"" + header + "\"}");
-//			Object tabFooter = chatComponentBuilderMethod.invoke(null, "{\"text\":\"" + footer + "\"}");
-//			Object packet = ReflectionUtils.getNMSClass("PacketPlayOutPlayerListHeaderFooter").getConstructor().newInstance();
-//
-//			Field aField;
-//			Field bField;
-//			try {
-//				aField = packet.getClass().getDeclaredField("a");
-//				bField = packet.getClass().getDeclaredField("b");
-//			} catch (Exception ex) {
-//				aField = packet.getClass().getDeclaredField("header");
-//				bField = packet.getClass().getDeclaredField("footer");
-//			}
-//
-//			aField.setAccessible(true);
-//			aField.set(packet, tabHeader);
-//
-//			bField.setAccessible(true);
-//			bField.set(packet, tabFooter);
-//
-//			ReflectionUtils.sendPacket(player, packet);
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//		}
+		player.sendPlayerListHeaderAndFooter(
+				LegacyComponentSerializer.legacySection().deserialize(header),
+				LegacyComponentSerializer.legacySection().deserialize(footer)
+		);
 	}
 }

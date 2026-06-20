@@ -2,6 +2,9 @@ package dev.strafbefehl.deluxehubreloaded.utility;
 
 import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
 import dev.strafbefehl.deluxehubreloaded.hook.hooks.head.HeadHook;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
@@ -84,12 +87,15 @@ public class ItemStackBuilder {
 		}
 
 		if(section.contains("enchantments")) {
+			@SuppressWarnings("unchecked")
 			List<LinkedHashMap<String, Integer>> enchantments = (List<LinkedHashMap<String, Integer>>) section.getList("enchantments");
 			for (LinkedHashMap<String, Integer> enchantmentMap : enchantments) {
 				for (Map.Entry<String, Integer> entry : enchantmentMap.entrySet()) {
 					String enchantmentName = entry.getKey();
 					int level = entry.getValue();
-					Enchantment enchantment = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchantmentName.toLowerCase()));
+					Enchantment enchantment = RegistryAccess.registryAccess()
+							.getRegistry(RegistryKey.ENCHANTMENT)
+							.get(NamespacedKey.minecraft(enchantmentName.toLowerCase()));
 					if (enchantment != null) {
 						builder.withEnchantment(enchantment, level);
 					} else {
@@ -143,18 +149,20 @@ public class ItemStackBuilder {
 
 	public ItemStackBuilder withName(String name) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
-		meta.setDisplayName(TextUtil.color(name));
+		meta.displayName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(name)));
 		ITEM_STACK.setItemMeta(meta);
 		return this;
 	}
 
 	public ItemStackBuilder withName(String name, Player player) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
-		meta.setDisplayName(TextUtil.color(PlaceholderUtil.setPlaceholders(name, player)));
+		meta.displayName(LegacyComponentSerializer.legacySection().deserialize(
+				TextUtil.color(PlaceholderUtil.setPlaceholders(name, player))));
 		ITEM_STACK.setItemMeta(meta);
 		return this;
 	}
 
+	@SuppressWarnings("deprecation")
 	public ItemStackBuilder setCustomModelData(int data) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
 		meta.setCustomModelData(data);
@@ -167,7 +175,7 @@ public class ItemStackBuilder {
 			SkullMeta im = (SkullMeta) ITEM_STACK.getItemMeta();
 			if (im != null) {
 				if (Bukkit.getPlayer(owner) != null) {
-					im.setOwnerProfile(Bukkit.getPlayer(owner).getPlayerProfile());
+					im.setPlayerProfile(Bukkit.getPlayer(owner).getPlayerProfile());
 				}
 			}
 			ITEM_STACK.setItemMeta(im);
@@ -178,27 +186,24 @@ public class ItemStackBuilder {
 
 	public ItemStackBuilder withLore(List<String> lore, Player player) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
-		List<String> coloredLore = new ArrayList<String>();
-		for (String s : lore) {
-			s = PlaceholderUtil.setPlaceholders(s, player);
-			coloredLore.add(TextUtil.color(s));
-		}
-		meta.setLore(coloredLore);
+		meta.lore(lore.stream()
+				.map(s -> LegacyComponentSerializer.legacySection().deserialize(
+						TextUtil.color(PlaceholderUtil.setPlaceholders(s, player))))
+				.toList());
 		ITEM_STACK.setItemMeta(meta);
 		return this;
 	}
 
 	public ItemStackBuilder withLore(List<String> lore) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
-		List<String> coloredLore = new ArrayList<String>();
-		for (String s : lore) {
-			coloredLore.add(TextUtil.color(s));
-		}
-		meta.setLore(coloredLore);
+		meta.lore(lore.stream()
+				.map(s -> LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(s)))
+				.toList());
 		ITEM_STACK.setItemMeta(meta);
 		return this;
 	}
 
+	@SuppressWarnings("deprecation")
 	public ItemStackBuilder withCustomModelData(int data) {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
 		meta.setCustomModelData(data);
@@ -237,6 +242,7 @@ public class ItemStackBuilder {
 		return withEnchantment(Enchantment.INFINITY, 1);
 	}
 
+	@SuppressWarnings("deprecation")
 	public ItemStackBuilder withType(Material material) {
 		ITEM_STACK.setType(material);
 		return this;
@@ -244,7 +250,7 @@ public class ItemStackBuilder {
 
 	public ItemStackBuilder clearLore() {
 		final ItemMeta meta = ITEM_STACK.getItemMeta();
-		meta.setLore(new ArrayList<String>());
+		meta.lore(new ArrayList<>());
 		ITEM_STACK.setItemMeta(meta);
 		return this;
 	}
@@ -276,7 +282,7 @@ public class ItemStackBuilder {
 		return getItemStack(ITEM_STACK, section, player);
 	}
 
-	public ItemStackBuilder addNamespacedKey(NamespacedKey key, PersistentDataType type, Object value) {
+	public <P, C> ItemStackBuilder addNamespacedKey(NamespacedKey key, PersistentDataType<P, C> type, C value) {
 		ItemMeta meta = ITEM_STACK.getItemMeta();
 		if (meta != null) {
 			PersistentDataContainer dataContainer = meta.getPersistentDataContainer();

@@ -44,12 +44,8 @@ public class ModuleManager {
 		}
 
 		if (!config.getBoolean("multiple_worlds")) {
-			if (DeluxeHubPlugin.IsCompatible()){
-				Bukkit.getLogger().log(Level.SEVERE, "PvPMode and TeleportationBow modules are not compatible with this server version.");
-			} else {
-				registerModule(new TeleportationBow(plugin), "teleportation_bow.enabled");
-				registerModule(new PvPMode(plugin), "pvp_mode.enabled");
-			}
+			registerModule(new TeleportationBow(plugin), "teleportation_bow.enabled");
+			registerModule(new PvPMode(plugin), "pvp_mode.enabled");
 		} else {
 			Bukkit.getLogger().log(Level.WARNING, "Multiple worlds is enabled (This deactivates the teleportation bow and pvp mode modules)");
 		}

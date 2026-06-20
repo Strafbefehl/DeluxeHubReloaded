@@ -1,6 +1,7 @@
 package dev.strafbefehl.deluxehubreloaded.module.modules.hotbar;
 
 import dev.strafbefehl.deluxehubreloaded.DeluxeHubPlugin;
+import dev.strafbefehl.deluxehubreloaded.module.ModuleType;
 import dev.strafbefehl.deluxehubreloaded.module.modules.world.BuildMode;
 import dev.strafbefehl.deluxehubreloaded.utility.ItemStackBuilder;
 import org.bukkit.Bukkit;
@@ -137,7 +138,7 @@ public abstract class HotbarItem implements Listener {
 		if (event.getHand() != EquipmentSlot.HAND) return;
 
 		Player player = event.getPlayer();
-		ItemStack item = player.getItemInHand();
+		ItemStack item = player.getInventory().getItemInMainHand();
 		if (item.getType() == Material.AIR) return;
 
 		ItemMeta meta = item.getItemMeta();
@@ -179,7 +180,9 @@ public abstract class HotbarItem implements Listener {
 		Player player = event.getPlayer();
 		if (BuildMode.getInstance().isPresent(player.getUniqueId())) return;
 		if (!getHotbarManager().inDisabledWorld(player.getLocation())) giveItem(player);
-		player.setAllowFlight(true);
+		if (getPlugin().getModuleManager().isEnabled(ModuleType.DOUBLE_JUMP)) {
+			player.setAllowFlight(true);
+		}
 	}
 
 }
